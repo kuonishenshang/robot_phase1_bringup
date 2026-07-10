@@ -12,6 +12,15 @@ sudo apt-get update
 sudo apt-get install -y ros-jazzy-slam-toolbox ros-jazzy-navigation2 ros-jazzy-nav2-bringup
 ```
 
+For Rock5C Ubuntu 24.04 migration, use the scripted setup:
+
+```bash
+bash ~/robot_storage/phase1_nav_ws/src/robot_phase1_bringup/scripts/setup_rock5c_jazzy.sh
+```
+
+See `docs/rock5c_migration.md` for the full board-side install, clone, build,
+hardware-permission, and validation workflow.
+
 ## Build
 
 Source the already-built lower workspaces before building this overlay:

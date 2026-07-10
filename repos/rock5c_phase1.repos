@@ -1,0 +1,17 @@
+repositories:
+  camera_test_ws/src/ros2_astra_camera:
+    type: git
+    url: https://github.com/kuonishenshang/ros2_astra_camera_Jazzy.git
+    version: main
+  serial_test_ws/src/serial_port_test:
+    type: git
+    url: https://github.com/kuonishenshang/serial_port_test.git
+    version: main
+  lidar_test_ws/src/cspc_lidar_sdk_ros2:
+    type: git
+    url: https://github.com/kuonishenshang/cspc_lidar_ros2_Jazzy.git
+    version: main
+  phase1_nav_ws/src/robot_phase1_bringup:
+    type: git
+    url: https://github.com/kuonishenshang/robot_phase1_bringup.git
+    version: main
