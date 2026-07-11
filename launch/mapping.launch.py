@@ -12,9 +12,12 @@ from launch_ros.actions import Node
 def generate_launch_description():
     share_dir = get_package_share_directory('robot_phase1_bringup')
 
-    hardware_launch = IncludeLaunchDescription(
+    # IncludeLaunch在一个总的launch文件中，嵌套调用其他的launch文件。
+    # 这里我们嵌套调用 robot_base.launch.py 和 slam_toolbox 的 online_async_launch.py
+    # 对相应的launch文件中的参数进行传递，使用LaunchConfiguration来获取参数值。
+    hardware_launch = IncludeLaunchDescription( 
         PythonLaunchDescriptionSource(
-            os.path.join(share_dir, 'launch', 'robot_base.launch.py')
+            os.path.join(share_dir, 'launch', 'robot_base.launch.py') #拼接路径，获取robot_base.launch.py的路径
         ),
         condition=IfCondition(LaunchConfiguration('start_hardware')),
         launch_arguments={
@@ -33,7 +36,7 @@ def generate_launch_description():
     slam_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('slam_toolbox'),
+                get_package_share_directory('slam_toolbox'), #获取slam_toolbox包的路径
                 'launch',
                 'online_async_launch.py',
             )
