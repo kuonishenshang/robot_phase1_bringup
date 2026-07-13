@@ -13,6 +13,8 @@ INSTALL_HARDWARE_PERMISSIONS="${INSTALL_HARDWARE_PERMISSIONS:-1}"
 INSTALL_RVIZ="${INSTALL_RVIZ:-1}"
 ALLOW_UNSUPPORTED="${ALLOW_UNSUPPORTED:-0}"
 RUN_ROSDEP="${RUN_ROSDEP:-1}"
+ROSDEP_COMMAND="${ROSDEP_COMMAND:-rosdep}"
+ROSDEP_EXECUTABLE=""
 
 readonly CAMERA_REPO="https://github.com/kuonishenshang/ros2_astra_camera_Jazzy.git"
 readonly SERIAL_REPO="https://github.com/kuonishenshang/serial_port_test.git"
@@ -26,6 +28,42 @@ log() {
 die() {
   printf '\n[rock5c-setup] ERROR: %s\n' "$*" >&2
   exit 1
+}
+
+warn() {
+  printf '\n[rock5c-setup] WARNING: %s\n' "$*" >&2
+}
+
+resolve_rosdep_executable() {
+  if [[ -n "${ROSDEP_EXECUTABLE}" ]]; then
+    return 0
+  fi
+
+  if ! ROSDEP_EXECUTABLE="$(command -v "${ROSDEP_COMMAND}")"; then
+    warn "Dependency resolver '${ROSDEP_COMMAND}' is not installed; continuing without rosdep checks."
+    RUN_ROSDEP=0
+    return 1
+  fi
+}
+
+initialize_rosdep() {
+  [[ "${RUN_ROSDEP}" == "1" ]] || return 0
+  resolve_rosdep_executable || return 0
+
+  if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then
+    if ! sudo "${ROSDEP_EXECUTABLE}" init; then
+      warn "${ROSDEP_COMMAND} init failed; continuing because required dependencies are installed explicitly."
+      RUN_ROSDEP=0
+      return 0
+    fi
+  else
+    log "rosdep-compatible source list already exists."
+  fi
+
+  if ! "${ROSDEP_EXECUTABLE}" update; then
+    warn "${ROSDEP_COMMAND} update failed; continuing because required dependencies are installed explicitly."
+    RUN_ROSDEP=0
+  fi
 }
 
 check_platform() {
@@ -114,10 +152,7 @@ install_ros_and_dependencies() {
 
   sudo apt install -y "${packages[@]}"
 
-  if [[ "${RUN_ROSDEP}" == "1" ]]; then
-    sudo rosdep init 2>/dev/null || true
-    rosdep update
-  fi
+  initialize_rosdep
 }
 
 ensure_github_auth() {
@@ -176,6 +211,7 @@ run_rosdep_for_ws() {
   local skip_keys="${2:-}"
 
   if [[ "${RUN_ROSDEP}" == "1" ]]; then
+    resolve_rosdep_executable || return 0
     local args=(
       install
       --from-paths "${ws_dir}/src"
@@ -189,7 +225,7 @@ run_rosdep_for_ws() {
       args+=(--skip-keys "${skip_keys}")
     fi
 
-    rosdep "${args[@]}"
+    "${ROSDEP_EXECUTABLE}" "${args[@]}"
   fi
 }
 

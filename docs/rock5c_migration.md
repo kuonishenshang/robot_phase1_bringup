@@ -74,7 +74,57 @@ INSTALL_HARDWARE_PERMISSIONS=0 bash scripts/setup_rock5c_jazzy.sh
 
 # Continue on a non-Rock5C/non-aarch64 test machine.
 ALLOW_UNSUPPORTED=1 bash scripts/setup_rock5c_jazzy.sh
+
+# Use rosdepc after installing it as described below.
+ROSDEP_COMMAND=rosdepc bash scripts/setup_rock5c_jazzy.sh
+
+# Skip dependency metadata checks when dependencies were already installed.
+RUN_ROSDEP=0 bash scripts/setup_rock5c_jazzy.sh
 ```
+
+### Recover From a rosdep Download Failure
+
+`rosdep init` and `rosdep update` download metadata from GitHub Raw. A
+`website may be down` error usually means that service is not reachable from
+the current network; it does not mean the local ROS 2 installation is damaged.
+
+On networks where GitHub Raw is unavailable, install the third-party `rosdepc`
+mirror client in an isolated Python environment:
+
+```bash
+sudo apt update
+sudo apt install -y pipx
+pipx install rosdepc
+
+ROSDEPC="${HOME}/.local/bin/rosdepc"
+sudo "${ROSDEPC}" init
+"${ROSDEPC}" update
+```
+
+If the source list already exists and still refers to
+`raw.githubusercontent.com`, back it up before running `rosdepc init`:
+
+```bash
+sudo mv \
+  /etc/ros/rosdep/sources.list.d/20-default.list \
+  /etc/ros/rosdep/sources.list.d/20-default.list.official
+sudo "${HOME}/.local/bin/rosdepc" init
+"${HOME}/.local/bin/rosdepc" update
+```
+
+Then update this repository and resume without repeating apt installation:
+
+```bash
+cd ~/robot_storage/phase1_nav_ws/src/robot_phase1_bringup
+git pull --ff-only
+
+INSTALL_ROS=0 ROSDEP_COMMAND="${HOME}/.local/bin/rosdepc" \
+  bash scripts/setup_rock5c_jazzy.sh
+```
+
+If both metadata services are unavailable, use `RUN_ROSDEP=0`. The setup
+script already installs the dependencies currently required by all four
+repositories explicitly.
 
 ## 3. Manual Setup Commands
 
