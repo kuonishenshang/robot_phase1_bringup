@@ -66,6 +66,24 @@ initialize_rosdep() {
   fi
 }
 
+source_setup_file() {
+  local setup_file="$1"
+  local restore_nounset=0
+
+  [[ -f "${setup_file}" ]] || die "Missing setup file: ${setup_file}"
+
+  if [[ $- == *u* ]]; then
+    restore_nounset=1
+    set +u
+  fi
+
+  # ROS-generated setup files are not guaranteed to be nounset-safe.
+  # shellcheck disable=SC1090
+  source "${setup_file}"
+
+  [[ "${restore_nounset}" == "0" ]] || set -u
+}
+
 check_platform() {
   local arch codename
 
@@ -234,24 +252,21 @@ build_workspaces() {
 
   [[ -f "${ros_setup}" ]] || die "Missing ${ros_setup}. Install ROS first."
 
-  # shellcheck disable=SC1090
-  source "${ros_setup}"
+  source_setup_file "${ros_setup}"
 
   log "Building serial chassis workspace."
   run_rosdep_for_ws "${ROBOT_STORAGE}/serial_test_ws"
   cd "${ROBOT_STORAGE}/serial_test_ws"
   colcon build --symlink-install --event-handlers console_direct+
 
-  # shellcheck disable=SC1091
-  source "${ROBOT_STORAGE}/serial_test_ws/install/setup.bash"
+  source_setup_file "${ROBOT_STORAGE}/serial_test_ws/install/setup.bash"
 
   log "Building lidar workspace."
   run_rosdep_for_ws "${ROBOT_STORAGE}/lidar_test_ws"
   cd "${ROBOT_STORAGE}/lidar_test_ws"
   colcon build --symlink-install --event-handlers console_direct+
 
-  # shellcheck disable=SC1091
-  source "${ROBOT_STORAGE}/lidar_test_ws/install/setup.bash"
+  source_setup_file "${ROBOT_STORAGE}/lidar_test_ws/install/setup.bash"
 
   log "Building phase1 bringup workspace."
   local phase1_skip_keys="serial_port_test cspc_lidar"
@@ -265,8 +280,7 @@ build_workspaces() {
   if [[ "${BUILD_CAMERA}" == "1" ]]; then
     log "Building camera workspace."
     # Keep the camera build independent from the navigation overlay.
-    # shellcheck disable=SC1090
-    source "${ros_setup}"
+    source_setup_file "${ros_setup}"
     run_rosdep_for_ws "${ROBOT_STORAGE}/camera_test_ws"
     cd "${ROBOT_STORAGE}/camera_test_ws"
     colcon build --symlink-install --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release
@@ -296,10 +310,17 @@ write_environment_helper() {
   mkdir -p "${ROBOT_STORAGE}"
   cat > "${env_file}" <<EOF
 #!/usr/bin/env bash
+_phase1_restore_nounset=0
+if [[ \$- == *u* ]]; then
+  _phase1_restore_nounset=1
+  set +u
+fi
 source /opt/ros/${ROS_DISTRO}/setup.bash
 source ${ROBOT_STORAGE}/serial_test_ws/install/setup.bash
 source ${ROBOT_STORAGE}/lidar_test_ws/install/setup.bash
 source ${ROBOT_STORAGE}/phase1_nav_ws/install/setup.bash
+[[ "\${_phase1_restore_nounset}" == "0" ]] || set -u
+unset _phase1_restore_nounset
 EOF
   chmod +x "${env_file}"
 
