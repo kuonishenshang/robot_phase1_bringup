@@ -17,21 +17,21 @@ slam_toolbox:
     debug_logging: false
     throttle_scans: 1
     transform_publish_period: 0.02
-    map_update_interval: 5.0
+    map_update_interval: 1.0 #地图数据刷新时间间隔（刷新地图）
     resolution: 0.05
     restamp_tf: false
     min_laser_range: 0.0
     max_laser_range: 16.0
-    minimum_time_interval: 0.5
+    minimum_time_interval: 0.2 ##change 0.5>>0.1 处理scan数据的时间间隔
     transform_timeout: 0.2
     tf_buffer_duration: 30.0
     stack_size_to_use: 40000000
     enable_interactive_mode: true
 
     use_scan_matching: true
-    use_scan_barycenter: true
-    minimum_travel_distance: 0.25
-    minimum_travel_heading: 0.25
+    use_scan_barycenter: true ##
+    minimum_travel_distance: 0.10 ## slammap更新条件：最小移动距离--移动至少25cm，才会处理新的scan数据
+    minimum_travel_heading: 0.10 ## 最小移动角度
     check_min_dist_and_heading_precisely: false
     scan_buffer_size: 10
     scan_buffer_maximum_scan_distance: 10.0
