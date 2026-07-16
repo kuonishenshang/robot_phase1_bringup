@@ -4,6 +4,7 @@ cspc_lidar:
     frame_id: laser_link
     ignore_array: ""
     baudrate: 230400
+    scan_bins: 800
     samp_rate: 9
     resolution_fixed: true
     singleChannel: false
