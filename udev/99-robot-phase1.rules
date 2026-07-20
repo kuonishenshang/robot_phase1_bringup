@@ -1,0 +1,5 @@
+# Chassis controller: bind to its unique USB serial number.
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d4", ATTRS{serial}=="5B0A017238", GROUP="dialout", MODE="0660", SYMLINK+="robot_base"
+
+# CSPC lidar: its CH341 adapter has no unique serial, so bind to the Rock5C USB port.
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ENV{ID_PATH}=="platform-fc8c0000.usb-usb-0:1:1.0", GROUP="dialout", MODE="0660", SYMLINK+="robot_lidar"

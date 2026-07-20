@@ -10,6 +10,7 @@ install(DIRECTORY
   maps
   repos
   rviz
+  udev
   DESTINATION share/${PROJECT_NAME}
   PATTERN "__pycache__" EXCLUDE
   PATTERN "*.pyc" EXCLUDE

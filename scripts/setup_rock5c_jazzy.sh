@@ -20,6 +20,8 @@ readonly CAMERA_REPO="https://github.com/kuonishenshang/ros2_astra_camera_Jazzy.
 readonly SERIAL_REPO="https://github.com/kuonishenshang/serial_port_test.git"
 readonly LIDAR_REPO="https://github.com/kuonishenshang/cspc_lidar_ros2_Jazzy.git"
 readonly PHASE1_REPO="https://github.com/kuonishenshang/robot_phase1_bringup.git"
+readonly BRINGUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+readonly ROBOT_UDEV_RULE="99-robot-phase1.rules"
 
 log() {
   printf '\n[rock5c-setup] %s\n' "$*"
@@ -288,20 +290,35 @@ build_workspaces() {
 }
 
 install_hardware_permissions() {
-  log "Installing serial/video group permissions and Orbbec camera udev rules."
+  log "Installing serial/video group permissions and hardware udev rules."
 
   sudo usermod -aG dialout,video,plugdev "${USER}"
+
+  local robot_rule_source="${BRINGUP_DIR}/udev/${ROBOT_UDEV_RULE}"
+  [[ -f "${robot_rule_source}" ]] || die "Missing robot udev rule: ${robot_rule_source}"
+  sudo install -m 0644 "${robot_rule_source}" "/etc/udev/rules.d/${ROBOT_UDEV_RULE}"
 
   if [[ "${INSTALL_CAMERA_UDEV}" == "1" ]]; then
     local camera_install_script="${ROBOT_STORAGE}/camera_test_ws/src/ros2_astra_camera/astra_camera/scripts/install.sh"
     if [[ -f "${camera_install_script}" ]]; then
       sudo bash "${camera_install_script}"
-      sudo udevadm control --reload-rules
-      sudo udevadm trigger
     else
       log "Camera udev script not found at ${camera_install_script}; skipping."
     fi
   fi
+
+  sudo udevadm control --reload-rules
+  sudo udevadm trigger
+  sudo udevadm settle
+
+  local device
+  for device in robot_base robot_lidar; do
+    if [[ -e "/dev/${device}" ]]; then
+      log "Stable device alias ready: /dev/${device} -> $(readlink -f "/dev/${device}")"
+    else
+      warn "/dev/${device} was not created. Check that the device is connected to its configured USB port."
+    fi
+  done
 }
 
 write_environment_helper() {
@@ -355,9 +372,12 @@ After mapping:
   ros2 run nav2_map_server map_saver_cli -f ${ROBOT_STORAGE}/phase1_nav_ws/src/robot_phase1_bringup/maps/map
   ros2 launch robot_phase1_bringup navigation.launch.py start_rviz:=false map:=${ROBOT_STORAGE}/phase1_nav_ws/src/robot_phase1_bringup/maps/map.yaml
 
-If the chassis or lidar device path differs, pass:
+The default stable device aliases are:
 
-  base_serial_port:=/dev/ttyACM0 lidar_port:=/dev/ttyUSB0
+  chassis: /dev/robot_base
+  lidar:   /dev/robot_lidar
+
+For diagnostic overrides, pass base_serial_port:=... and lidar_port:=... to the launch command.
 
 EOF
 }

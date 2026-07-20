@@ -50,8 +50,8 @@ bash ~/robot_storage/phase1_nav_ws/src/robot_phase1_bringup/scripts/setup_rock5c
 ```
 
 The script installs ROS 2 Jazzy dependencies, clones or updates the four
-repositories, installs hardware permissions, builds the workspaces in dependency
-order, and writes:
+repositories, installs hardware permissions and stable serial-device aliases,
+builds the workspaces in dependency order, and writes:
 
 ```bash
 ~/robot_storage/setup_phase1.bash
@@ -204,25 +204,34 @@ Run once, then reboot:
 ```bash
 sudo usermod -aG dialout,video,plugdev $USER
 
+sudo install -m 0644 \
+  ~/robot_storage/phase1_nav_ws/src/robot_phase1_bringup/udev/99-robot-phase1.rules \
+  /etc/udev/rules.d/99-robot-phase1.rules
+
 cd ~/robot_storage/camera_test_ws/src/ros2_astra_camera/astra_camera/scripts
 sudo bash install.sh
 sudo udevadm control --reload-rules
 sudo udevadm trigger
+sudo udevadm settle
 sudo reboot
 ```
 
 After reboot, check device names:
 
 ```bash
-ls -l /dev/ttyACM* /dev/ttyUSB*
+ls -l /dev/robot_base /dev/robot_lidar
 ```
 
 The default launch values are:
 
-- chassis: `/dev/ttyACM0`, `230400`
-- lidar: `/dev/ttyUSB0`, `230400`
+- chassis: `/dev/robot_base`, `230400`
+- lidar: `/dev/robot_lidar`, `230400`
 
-Override them from launch if the board assigns different device paths.
+The chassis alias is matched by USB serial number `5B0A017238`. The lidar's
+CH341 adapter has no unique serial number, so `robot_lidar` is matched to the
+Rock5C physical USB path `platform-fc8c0000.usb-usb-0:1:1.0`. Keep the lidar
+connected to that port. The launch arguments remain available for diagnostics
+or replacement hardware.
 
 ## 5. Runtime Verification
 

@@ -21,6 +21,14 @@ bash ~/robot_storage/phase1_nav_ws/src/robot_phase1_bringup/scripts/setup_rock5c
 See `docs/rock5c_migration.md` for the full board-side install, clone, build,
 hardware-permission, and validation workflow.
 
+The setup script installs stable serial-device aliases:
+
+- `/dev/robot_base`: chassis controller matched by its unique USB serial number.
+- `/dev/robot_lidar`: lidar matched by its physical USB port because its CH341
+  adapter does not expose a unique serial number.
+
+Keep the lidar connected to the configured Rock5C USB port.
+
 ## Build
 
 Source the already-built lower workspaces before building this overlay:

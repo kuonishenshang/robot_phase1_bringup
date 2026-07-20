@@ -165,9 +165,9 @@ def generate_launch_description():
         DeclareLaunchArgument('start_lidar', default_value='true'),
         DeclareLaunchArgument('start_laser_tf', default_value='true'),
         DeclareLaunchArgument('start_rviz', default_value='true'),
-        DeclareLaunchArgument('base_serial_port', default_value='/dev/ttyACM0'),
+        DeclareLaunchArgument('base_serial_port', default_value='/dev/robot_base'),
         DeclareLaunchArgument('base_baudrate', default_value='230400'),
-        DeclareLaunchArgument('lidar_port', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument('lidar_port', default_value='/dev/robot_lidar'),
         DeclareLaunchArgument('lidar_baudrate', default_value='230400'),
         DeclareLaunchArgument(
             'map',
