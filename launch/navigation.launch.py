@@ -122,7 +122,20 @@ def generate_launch_description():
         remappings=remappings,
     )
 
-    lifecycle_manager = Node(
+    lifecycle_manager_localization = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_localization',
+        output='screen',
+        parameters=[
+            {'use_sim_time': ParameterValue(use_sim_time, value_type=bool)},
+            {'autostart': ParameterValue(autostart, value_type=bool)},
+            {'node_names': ['map_server', 'amcl']},
+        ],
+        arguments=['--ros-args', '--log-level', log_level],
+    )
+
+    lifecycle_manager_navigation = Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',
         name='lifecycle_manager_navigation',
@@ -132,8 +145,6 @@ def generate_launch_description():
             {'autostart': ParameterValue(autostart, value_type=bool)},
             {
                 'node_names': [
-                    'map_server',
-                    'amcl',
                     'controller_server',
                     'smoother_server',
                     'planner_server',
@@ -158,7 +169,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
-        DeclareLaunchArgument('autostart', default_value='true'),
+        DeclareLaunchArgument('autostart', default_value='false'),
         DeclareLaunchArgument('log_level', default_value='info'),
         DeclareLaunchArgument('start_hardware', default_value='true'),
         DeclareLaunchArgument('start_base', default_value='true'),
@@ -199,6 +210,7 @@ def generate_launch_description():
         behavior_server,
         bt_navigator,
         waypoint_follower,
-        lifecycle_manager,
+        lifecycle_manager_localization,
+        lifecycle_manager_navigation,
         rviz_node,
     ])
