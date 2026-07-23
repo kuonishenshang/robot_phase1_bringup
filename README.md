@@ -1,7 +1,7 @@
-# Phase 1 Lidar SLAM and Navigation Bringup
+# Phase 1 SLAM and Navigation Bringup
 
 This workspace is an overlay bringup layer. It does not copy or modify the
-validated chassis and lidar packages.
+validated chassis, lidar, and Astra camera packages.
 
 ## Required system packages
 
@@ -37,6 +37,7 @@ Source the already-built lower workspaces before building this overlay:
 source /opt/ros/jazzy/setup.bash
 source /home/dzx/robot_storage/serial_test_ws/install/setup.bash
 source /home/dzx/robot_storage/lidar_test_ws/install/setup.bash
+source /home/dzx/robot_storage/camera_test_ws/install/setup.bash
 cd /home/dzx/robot_storage/phase1_nav_ws
 colcon build
 source install/setup.bash
@@ -66,6 +67,27 @@ ros2 launch robot_phase1_bringup navigation.launch.py \
 Use RViz to set the initial pose, wait for AMCL to converge, then send a 2D
 navigation goal.
 
+The navigation launch starts the Astra Pro RGB, depth, and XYZ point-cloud
+streams by default. Disable the camera for lidar-only operation with:
+
+```bash
+ros2 launch robot_phase1_bringup navigation.launch.py start_camera:=false
+```
+
+The tested Astra Pro profile is RGB `640x480@15` and depth `640x480@30`.
+The device does not support depth `640x480@15` and otherwise falls back to
+30 Hz with a driver warning.
+
+The camera mount is published as `base_link -> camera_link` with a default
+translation of `(0.08, 0.0, 0.0)` metres and an identity rotation. The depth
+point cloud feeds a local-costmap VoxelLayer; voxel debug output remains
+enabled during Phase 1 integration.
+
+The VoxelLayer publishes `/local_costmap/voxel_grid`. A debug converter started
+by this launch publishes its marked cells as the RViz-compatible
+`/local_costmap/voxel_marked_cloud`. Disable it outside debugging with
+`publish_voxel_debug:=false`.
+
 ## Interfaces
 
 - `/cmd_vel`: chassis command input.
@@ -73,5 +95,11 @@ navigation goal.
 - `/imu/data`: chassis IMU data.
 - `/battery/voltage`: chassis battery voltage.
 - `/scan`: lidar scan.
+- `/camera/color/image_raw`: Astra Pro RGB image.
+- `/camera/depth/image_raw`: Astra Pro depth image.
+- `/camera/depth/points`: depth-only XYZ point cloud.
+- `/local_costmap/voxel_grid`: raw Nav2 voxel-grid debug data.
+- `/local_costmap/voxel_marked_cloud`: marked voxels for RViz display.
 - TF: `map -> odom` from SLAM or AMCL, `odom -> base_link` from chassis,
-  `base_link -> laser_link` from this bringup package.
+  `base_link -> laser_link` and `base_link -> camera_link` from this bringup
+  package, and camera-internal optical frames from the Astra driver.

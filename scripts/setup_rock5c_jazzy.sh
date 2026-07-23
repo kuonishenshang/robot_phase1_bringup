@@ -270,15 +270,6 @@ build_workspaces() {
 
   source_setup_file "${ROBOT_STORAGE}/lidar_test_ws/install/setup.bash"
 
-  log "Building phase1 bringup workspace."
-  local phase1_skip_keys="serial_port_test cspc_lidar"
-  if [[ "${INSTALL_RVIZ}" != "1" ]]; then
-    phase1_skip_keys="${phase1_skip_keys} rviz2"
-  fi
-  run_rosdep_for_ws "${ROBOT_STORAGE}/phase1_nav_ws" "${phase1_skip_keys}"
-  cd "${ROBOT_STORAGE}/phase1_nav_ws"
-  colcon build --symlink-install --event-handlers console_direct+
-
   if [[ "${BUILD_CAMERA}" == "1" ]]; then
     log "Building camera workspace."
     # Keep the camera build independent from the navigation overlay.
@@ -287,6 +278,23 @@ build_workspaces() {
     cd "${ROBOT_STORAGE}/camera_test_ws"
     colcon build --symlink-install --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release
   fi
+
+  # Rebuild the intended underlay chain before compiling the phase1 bringup.
+  source_setup_file "${ros_setup}"
+  source_setup_file "${ROBOT_STORAGE}/serial_test_ws/install/setup.bash"
+  source_setup_file "${ROBOT_STORAGE}/lidar_test_ws/install/setup.bash"
+  if [[ -f "${ROBOT_STORAGE}/camera_test_ws/install/setup.bash" ]]; then
+    source_setup_file "${ROBOT_STORAGE}/camera_test_ws/install/setup.bash"
+  fi
+
+  log "Building phase1 bringup workspace."
+  local phase1_skip_keys="serial_port_test cspc_lidar astra_camera"
+  if [[ "${INSTALL_RVIZ}" != "1" ]]; then
+    phase1_skip_keys="${phase1_skip_keys} rviz2"
+  fi
+  run_rosdep_for_ws "${ROBOT_STORAGE}/phase1_nav_ws" "${phase1_skip_keys}"
+  cd "${ROBOT_STORAGE}/phase1_nav_ws"
+  colcon build --symlink-install --event-handlers console_direct+
 }
 
 install_hardware_permissions() {
@@ -335,6 +343,9 @@ fi
 source /opt/ros/${ROS_DISTRO}/setup.bash
 source ${ROBOT_STORAGE}/serial_test_ws/install/setup.bash
 source ${ROBOT_STORAGE}/lidar_test_ws/install/setup.bash
+if [[ -f ${ROBOT_STORAGE}/camera_test_ws/install/setup.bash ]]; then
+  source ${ROBOT_STORAGE}/camera_test_ws/install/setup.bash
+fi
 source ${ROBOT_STORAGE}/phase1_nav_ws/install/setup.bash
 [[ "\${_phase1_restore_nounset}" == "0" ]] || set -u
 unset _phase1_restore_nounset
