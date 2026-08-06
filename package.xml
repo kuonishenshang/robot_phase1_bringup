@@ -11,6 +11,8 @@
 
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>astra_camera</exec_depend>
+  <exec_depend>rknn_yolov8_ros</exec_depend>
+  <exec_depend>person_following</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_xml</exec_depend>
   <exec_depend>launch_ros</exec_depend>
@@ -34,6 +36,7 @@
   <exec_depend>nav2_waypoint_follower</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+
 
   <export>
     <build_type>ament_cmake</build_type>

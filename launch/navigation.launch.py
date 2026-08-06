@@ -18,6 +18,10 @@ def generate_launch_description():
     camera_share_dir = get_package_share_directory('astra_camera')
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
+    yolov8_share_dir = get_package_share_directory('rknn_yolov8_ros')
+
+    person_following_share_dir = get_package_share_directory('person_following')
+
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
@@ -45,6 +49,20 @@ def generate_launch_description():
         "'", LaunchConfiguration('start_hardware'), "' == 'true' and '",
         LaunchConfiguration('start_camera'), "' == 'true'",
     ])
+
+    yolo_enabled = PythonExpression([
+            "'", LaunchConfiguration('start_hardware'), "' == 'true' and '",
+            LaunchConfiguration('start_camera'), "' == 'true' and '",
+            LaunchConfiguration('start_yolo'), "' == 'true'",
+    ])
+
+    person_following_enabled = PythonExpression([
+        "'", LaunchConfiguration('start_hardware'), "' == 'true' and '",
+        LaunchConfiguration('start_camera'), "' == 'true' and '",
+        LaunchConfiguration('start_yolo'), "' == 'true' and '",
+        LaunchConfiguration('start_person_following'), "' == 'true'",
+    ])
+
     camera_tf_enabled = PythonExpression([
         "'", LaunchConfiguration('start_hardware'), "' == 'true' and '",
         LaunchConfiguration('start_camera'), "' == 'true' and '",
@@ -63,7 +81,8 @@ def generate_launch_description():
             'enable_ir': 'false',
             'enable_point_cloud': 'true',
             'enable_colored_point_cloud': 'false',
-            'depth_registration': 'false',
+            'depth_registration': 'true', #开启深度矫正,将深度像素对齐到彩色像素
+            'color_depth_synchronization': 'true', #强制彩色和深度图像硬件同步曝光
             'color_width': LaunchConfiguration('camera_color_width'),
             'color_height': LaunchConfiguration('camera_color_height'),
             'color_fps': LaunchConfiguration('camera_color_fps'),
@@ -94,6 +113,40 @@ def generate_launch_description():
             '--frame-id', 'base_link',
             '--child-frame-id', 'camera_link',
         ],
+    )
+
+
+    yolo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                yolov8_share_dir,
+                'launch',
+                'yolov8.launch.py'
+            )
+        ),
+        condition=IfCondition(yolo_enabled),
+        launch_arguments={
+            'yolo_params_file': LaunchConfiguration('yolo_params_file'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }.items(),
+    )
+
+    person_following_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+          os.path.join(
+              person_following_share_dir,
+              'launch',
+              'person_following.launch.py'
+          )
+        ),
+        condition=IfCondition(person_following_enabled),
+        ## LaunchConfiguration('person_following.launch.py') 中声明的参数名' ##
+        launch_arguments={
+            'person_following_params_file': LaunchConfiguration('person_following_params_file'),
+            'person_following_use_sim_time': LaunchConfiguration('use_sim_time'),
+            'enable_person_following_navigation': LaunchConfiguration('enable_person_following_navigation'),
+            'person_following_log_level': LaunchConfiguration('person_following_log_level'),
+        }.items(),
     )
 
     voxel_debug_node = Node(
@@ -237,7 +290,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
-        DeclareLaunchArgument('autostart', default_value='false'),
+        DeclareLaunchArgument('autostart', default_value='true'),
         DeclareLaunchArgument('log_level', default_value='info'),
         DeclareLaunchArgument('start_hardware', default_value='true'),
         DeclareLaunchArgument('start_base', default_value='true'),
@@ -254,7 +307,7 @@ def generate_launch_description():
         DeclareLaunchArgument('camera_name', default_value='camera'),
         DeclareLaunchArgument('camera_color_width', default_value='640'),
         DeclareLaunchArgument('camera_color_height', default_value='480'),
-        DeclareLaunchArgument('camera_color_fps', default_value='15'),
+        DeclareLaunchArgument('camera_color_fps', default_value='30'),
         DeclareLaunchArgument('camera_depth_width', default_value='640'),
         DeclareLaunchArgument('camera_depth_height', default_value='480'),
         DeclareLaunchArgument('camera_depth_fps', default_value='30'),
@@ -286,9 +339,43 @@ def generate_launch_description():
             'rviz_config',
             default_value=os.path.join(share_dir, 'rviz', 'navigation.rviz'),
         ),
+        DeclareLaunchArgument(
+            'start_yolo',
+            default_value='true',
+        ),
+        DeclareLaunchArgument(
+            'yolo_params_file',
+            default_value=os.path.join(
+              yolov8_share_dir,
+              'config',
+              'yolov8.yaml',
+            ),
+        ),
+        DeclareLaunchArgument(
+            'start_person_following',
+            default_value='false',
+        ),
+        DeclareLaunchArgument(
+            'enable_person_following_navigation',
+            default_value='false',
+        ),
+        DeclareLaunchArgument(
+            'person_following_log_level',
+            default_value='info',
+        ),
+        DeclareLaunchArgument(
+            'person_following_params_file',
+            default_value=os.path.join(
+                person_following_share_dir,
+                'config',
+                'person_following.yaml',
+            ),
+        ),
         hardware_launch,
         camera_launch,
         camera_tf_node,
+        yolo_launch,
+        person_following_launch,
         voxel_debug_node,
         map_server,
         amcl,
