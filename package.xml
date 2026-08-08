@@ -13,6 +13,7 @@
   <exec_depend>astra_camera</exec_depend>
   <exec_depend>rknn_yolov8_ros</exec_depend>
   <exec_depend>person_following</exec_depend>
+  <exec_depend>person_target_fusion</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_xml</exec_depend>
   <exec_depend>launch_ros</exec_depend>

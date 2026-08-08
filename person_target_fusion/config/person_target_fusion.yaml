@@ -1,0 +1,20 @@
+person_target_fusion_node:
+  ros__parameters:
+    vision_topic: /yolo/detections
+    radar_topic: /radar/tracks
+    output_topic: /person_tracking/target
+    tracking_frame: odom
+    person_class_id: 0
+    min_vision_confidence: 0.70
+    association_confirm_frames: 3
+    association_max_distance_m: 0.80
+    association_max_time_diff_sec: 0.15
+    association_min_margin_m: 0.25
+    vision_timeout_sec: 0.30
+    radar_timeout_sec: 0.60
+    sensor_gap_timeout_sec: 0.80
+    radar_min_confidence: 0.0
+    use_radar_velocity: false
+    vision_only_navigation: true
+    transform_timeout_sec: 0.08
+    publish_rate_hz: 20.0

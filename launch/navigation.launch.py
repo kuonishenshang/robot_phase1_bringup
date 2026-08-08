@@ -21,6 +21,7 @@ def generate_launch_description():
     yolov8_share_dir = get_package_share_directory('rknn_yolov8_ros')
 
     person_following_share_dir = get_package_share_directory('person_following')
+    person_target_fusion_share_dir = get_package_share_directory('person_target_fusion')
 
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -67,6 +68,12 @@ def generate_launch_description():
         "'", LaunchConfiguration('start_hardware'), "' == 'true' and '",
         LaunchConfiguration('start_camera'), "' == 'true' and '",
         LaunchConfiguration('start_camera_tf'), "' == 'true'",
+    ])
+
+    person_target_fusion_enabled = PythonExpression([
+        "'", LaunchConfiguration('start_hardware'), "' == 'true' and '",
+        LaunchConfiguration('start_yolo'), "' == 'true' and '",
+        LaunchConfiguration('start_person_target_fusion'), "' == 'true'",
     ])
 
     camera_launch = IncludeLaunchDescription(
@@ -146,6 +153,17 @@ def generate_launch_description():
             'person_following_use_sim_time': LaunchConfiguration('use_sim_time'),
             'enable_person_following_navigation': LaunchConfiguration('enable_person_following_navigation'),
             'person_following_log_level': LaunchConfiguration('person_following_log_level'),
+        }.items(),
+    )
+
+    person_target_fusion_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(person_target_fusion_share_dir, 'launch', 'person_target_fusion.launch.py')
+        ),
+        condition=IfCondition(person_target_fusion_enabled),
+        launch_arguments={
+            'vision_topic': '/yolo/detections',
+            'radar_topic': LaunchConfiguration('person_target_fusion_radar_topic'),
         }.items(),
     )
 
@@ -355,6 +373,8 @@ def generate_launch_description():
             'start_person_following',
             default_value='false',
         ),
+        DeclareLaunchArgument('start_person_target_fusion', default_value='false'),
+        DeclareLaunchArgument('person_target_fusion_radar_topic', default_value='/radar/tracks'),
         DeclareLaunchArgument(
             'enable_person_following_navigation',
             default_value='false',
@@ -375,6 +395,7 @@ def generate_launch_description():
         camera_launch,
         camera_tf_node,
         yolo_launch,
+        person_target_fusion_launch,
         person_following_launch,
         voxel_debug_node,
         map_server,

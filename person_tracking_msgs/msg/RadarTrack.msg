@@ -1,0 +1,8 @@
+uint32 track_id
+geometry_msgs/Point position
+geometry_msgs/Vector3 velocity
+geometry_msgs/Vector3 acceleration
+float32 confidence
+uint16 point_count
+float32 position_variance
+float32 velocity_variance
